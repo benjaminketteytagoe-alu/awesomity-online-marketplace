@@ -80,6 +80,10 @@ app:
     refresh-ttl-days: ${JWT_REFRESH_TTL_DAYS:7}
     issuer: marketplace
 
+  admin:
+    email: ${ADMIN_EMAIL:}
+    password: ${ADMIN_PASSWORD:}
+
 logging:
   level:
     org.flywaydb: INFO

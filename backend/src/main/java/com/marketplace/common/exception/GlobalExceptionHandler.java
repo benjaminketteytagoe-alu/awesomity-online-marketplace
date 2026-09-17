@@ -5,6 +5,7 @@ import com.marketplace.mail.MailSendingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -55,6 +56,30 @@ public class GlobalExceptionHandler {
                         HttpStatus.INTERNAL_SERVER_ERROR.value(),
                         "MAIL_SEND_FAILED",
                         "Failed to send email",
+                        req.getRequestURI()));
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(
+            AuthorizationDeniedException ex, HttpServletRequest req) {
+        log.debug("Access denied at {}: {}", req.getRequestURI(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiError.of(
+                        HttpStatus.FORBIDDEN.value(),
+                        "FORBIDDEN",
+                        "Insufficient permissions",
+                        req.getRequestURI()));
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDeniedLegacy(
+            org.springframework.security.access.AccessDeniedException ex, HttpServletRequest req) {
+        log.debug("Access denied (legacy) at {}: {}", req.getRequestURI(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiError.of(
+                        HttpStatus.FORBIDDEN.value(),
+                        "FORBIDDEN",
+                        "Insufficient permissions",
                         req.getRequestURI()));
     }
 
