@@ -1,0 +1,12 @@
+Hi [[${name}]],
+
+Welcome to Marketplace!
+
+To verify your email address and activate your account, open this link:
+
+[[${verificationUrl}]]
+
+This link expires in [[${expiresInMinutes}]] minutes. If you didn't sign up,
+you can safely ignore this email.
+
+— The Marketplace team

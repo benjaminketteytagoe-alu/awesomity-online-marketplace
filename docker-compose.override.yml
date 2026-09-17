@@ -2,17 +2,14 @@ services:
   postgres:
     ports:
       - "5433:5432"
-
   rabbitmq:
     ports:
       - "5672:5672"
       - "15672:15672"
-
   mailhog:
     ports:
       - "1025:1025"
       - "8025:8025"
-
   backend:
     environment:
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: dev,mailtest
