@@ -3,9 +3,7 @@ package com.marketplace.order;
 import com.marketplace.common.exception.BadRequestException;
 import com.marketplace.common.exception.ForbiddenException;
 import com.marketplace.common.exception.NotFoundException;
-import com.marketplace.messaging.producer.OrderProducer;
 import com.marketplace.order.dto.*;
-import com.marketplace.order.event.OrderPlacedEvent;
 import com.marketplace.product.Product;
 import com.marketplace.product.ProductRepository;
 import com.marketplace.user.User;
@@ -18,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -32,26 +29,27 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final OrderProducer orderProducer;
 
     // ---------------- SHOPPER ----------------
 
+    /**
+     * Create a PENDING order. Does NOT publish to the queue.
+     * The async pipeline kicks off when PaymentService.pay() succeeds.
+     */
     @Transactional
     public PlaceOrderResponse place(UUID shopperId, PlaceOrderRequest req) {
         User shopper = userRepository.findById(shopperId)
                 .orElseThrow(() -> new NotFoundException("Shopper not found"));
 
-        // Snapshot prices and build items; validate products exist
-        List<OrderItem> items = new ArrayList<>();
-        List<OrderPlacedEvent.Item> eventItems = new ArrayList<>();
-        BigDecimal total = BigDecimal.ZERO;
-
         Order order = Order.builder()
                 .shopper(shopper)
                 .status(OrderStatus.PENDING)
-                .totalAmount(BigDecimal.ZERO)  // placeholder; updated below
+                .totalAmount(BigDecimal.ZERO)
                 .build();
         orderRepository.saveAndFlush(order);
+
+        BigDecimal total = BigDecimal.ZERO;
+        List<OrderItem> items = new ArrayList<>();
 
         for (PlaceOrderRequest.Item reqItem : req.items()) {
             Product product = productRepository.findByIdAndDeletedAtIsNull(reqItem.productId())
@@ -70,35 +68,19 @@ public class OrderService {
                     .build();
             orderItemRepository.save(oi);
             items.add(oi);
-
-            eventItems.add(new OrderPlacedEvent.Item(
-                    product.getId(),
-                    product.getStore().getId(),
-                    product.getStore().getOwner().getId(),
-                    product.getName(),
-                    reqItem.quantity()
-            ));
         }
 
         order.setTotalAmount(total);
         orderRepository.saveAndFlush(order);
 
-        // Publish event for async processing
-        orderProducer.publishOrderPlaced(new OrderPlacedEvent(
-                order.getId(),
-                shopper.getId(),
-                shopper.getEmail(),
-                shopper.getName(),
-                eventItems));
-
-        log.info("Order placed id={} shopperId={} total={} status=PENDING",
+        log.info("Order created id={} shopperId={} total={} status=PENDING (awaiting payment)",
                 order.getId(), shopperId, total);
 
         return new PlaceOrderResponse(
                 order.getId(),
                 order.getStatus().name(),
                 order.getTotalAmount(),
-                "Order received. We're processing it now — you'll get an email confirmation shortly.");
+                "Order created. Complete payment to confirm.");
     }
 
     @Transactional(readOnly = true)
@@ -129,11 +111,15 @@ public class OrderService {
             throw new BadRequestException("CANNOT_CANCEL",
                     "Orders can only be cancelled before shipping");
         }
-        // Restore stock for each item
-        List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
-        for (OrderItem item : items) {
-            productRepository.incrementStock(item.getProduct().getId(), item.getQuantity());
+
+        // Restore stock — only if payment was already processed (PAID).
+        if (order.getStatus() == OrderStatus.PAID) {
+            List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
+            for (OrderItem item : items) {
+                productRepository.incrementStock(item.getProduct().getId(), item.getQuantity());
+            }
         }
+
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
         log.info("Order cancelled by shopper orderId={}", orderId);
@@ -165,7 +151,6 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
 
-        // Confirm the seller has items in this order
         List<OrderItem> sellerItems = orderItemRepository
                 .findByOrderIdAndProductStoreOwnerId(orderId, sellerId);
         if (sellerItems.isEmpty()) {
@@ -216,12 +201,6 @@ public class OrderService {
 
     // ---------------- helpers ----------------
 
-    /**
-     * Rules for seller-driven status transitions:
-     *  PROCESSING -> SHIPPED
-     *  SHIPPED    -> DELIVERED
-     *  ADMIN/PAID -> PROCESSING (payment already confirmed by async worker)
-     */
     private void validateSellerTransition(OrderStatus current, OrderStatus next) {
         boolean ok = switch (current) {
             case PAID -> next == OrderStatus.PROCESSING;
