@@ -74,6 +74,12 @@ app:
     frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
     token-ttl-minutes: 60
 
+  jwt:
+    secret: ${JWT_SECRET}
+    access-ttl-minutes: ${JWT_ACCESS_TTL_MINUTES:15}
+    refresh-ttl-days: ${JWT_REFRESH_TTL_DAYS:7}
+    issuer: marketplace
+
 logging:
   level:
     org.flywaydb: INFO
@@ -81,3 +87,4 @@ logging:
     org.springframework.amqp: INFO
     org.springframework.mail: DEBUG
     com.marketplace.mail: DEBUG
+    com.marketplace.security: DEBUG

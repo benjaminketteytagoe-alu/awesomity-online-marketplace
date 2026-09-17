@@ -1,18 +1,20 @@
 package com.marketplace.auth;
 
-import com.marketplace.auth.dto.RegisterRequest;
-import com.marketplace.auth.dto.RegisterResponse;
-import com.marketplace.auth.dto.VerifyResponse;
+import com.marketplace.auth.dto.*;
 import com.marketplace.auth.email.EmailJob;
 import com.marketplace.auth.email.VerificationTokenGenerator;
 import com.marketplace.common.exception.BadRequestException;
 import com.marketplace.common.exception.ConflictException;
+import com.marketplace.common.exception.UnauthorizedException;
 import com.marketplace.mail.MailProperties;
 import com.marketplace.messaging.producer.EmailProducer;
+import com.marketplace.security.JwtService;
 import com.marketplace.user.User;
 import com.marketplace.user.UserRepository;
 import com.marketplace.user.UserRole;
 import com.marketplace.user.UserStatus;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -33,6 +36,7 @@ public class AuthService {
     private final VerificationTokenGenerator tokenGenerator;
     private final EmailProducer emailProducer;
     private final MailProperties mailProperties;
+    private final JwtService jwtService;
 
     @Transactional
     public RegisterResponse register(RegisterRequest req) {
@@ -64,9 +68,7 @@ public class AuthService {
         publishVerificationEmail(user, token);
 
         return new RegisterResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getName(),
+                user.getId(), user.getEmail(), user.getName(),
                 user.getStatus().name(),
                 "Check your inbox to verify your email and activate your account.");
     }
@@ -89,7 +91,7 @@ public class AuthService {
         if (user.getVerifyExpiresAt() == null
                 || user.getVerifyExpiresAt().isBefore(Instant.now())) {
             throw new BadRequestException(
-                    "TOKEN_EXPIRED", "Verification token has expired. Please request a new one");
+                    "TOKEN_EXPIRED", "Verification token has expired");
         }
 
         user.setEmailVerifiedAt(Instant.now());
@@ -101,10 +103,85 @@ public class AuthService {
         log.info("Verified user id={} email={}", user.getId(), user.getEmail());
 
         return new VerifyResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getStatus().name(),
+                user.getId(), user.getEmail(), user.getStatus().name(),
                 "Email verified. You can now log in.");
+    }
+
+    @Transactional(readOnly = true)
+    public LoginResponse login(LoginRequest req) {
+        String email = req.email().toLowerCase().trim();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(
+                        "Invalid email or password"));
+
+        if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Invalid email or password");
+        }
+
+        if (user.getStatus() == UserStatus.SUSPENDED) {
+            throw new UnauthorizedException("Account is suspended");
+        }
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new UnauthorizedException(
+                    "Email not verified. Check your inbox to activate your account.");
+        }
+
+        String access = jwtService.generateAccessToken(user);
+        String refresh = jwtService.generateRefreshToken(user);
+
+        log.info("Login success userId={} email={}", user.getId(), user.getEmail());
+
+        return new LoginResponse(
+                access, refresh, "Bearer",
+                jwtService.getAccessTtlSeconds(),
+                new LoginResponse.UserSummary(
+                        user.getId().toString(),
+                        user.getEmail(),
+                        user.getName(),
+                        user.getRole().name(),
+                        user.getStatus().name()
+                ));
+    }
+
+    @Transactional(readOnly = true)
+    public RefreshResponse refresh(RefreshRequest req) {
+        Claims claims;
+        try {
+            claims = jwtService.parse(req.refreshToken());
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new UnauthorizedException("Refresh token is invalid or expired");
+        }
+
+        if (!jwtService.isRefreshToken(claims)) {
+            throw new UnauthorizedException("Provided token is not a refresh token");
+        }
+
+        UUID userId = jwtService.extractUserId(claims);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User no longer exists"));
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new UnauthorizedException("Account is not active");
+        }
+
+        String newAccess = jwtService.generateAccessToken(user);
+
+        return new RefreshResponse(
+                newAccess, "Bearer", jwtService.getAccessTtlSeconds());
+    }
+
+    @Transactional(readOnly = true)
+    public MeResponse me(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        return new MeResponse(
+                user.getId().toString(),
+                user.getEmail(),
+                user.getName(),
+                user.getRole().name(),
+                user.getStatus().name());
     }
 
     private void publishVerificationEmail(User user, String token) {
@@ -119,8 +196,7 @@ public class AuthService {
                         "name", user.getName(),
                         "verificationUrl", verificationUrl,
                         "expiresInMinutes", mailProperties.getTokenTtlMinutes()
-                )
-        );
+                ));
 
         emailProducer.sendVerificationEmail(job);
     }
