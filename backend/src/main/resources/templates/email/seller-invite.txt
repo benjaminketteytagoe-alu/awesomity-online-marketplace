@@ -1,0 +1,11 @@
+Hi [[${name}]],
+
+Great news — your seller application for "[[${shopName}]]" has been approved!
+
+To activate your account and set up your shop, open this link and set a password:
+
+[[${inviteUrl}]]
+
+This invite expires in [[${expiresInDays}]] days.
+
+— The Marketplace team

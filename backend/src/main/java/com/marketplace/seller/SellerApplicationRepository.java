@@ -1,5 +1,7 @@
 package com.marketplace.seller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +14,6 @@ public interface SellerApplicationRepository extends JpaRepository<SellerApplica
     Optional<SellerApplication> findByEmail(String email);
 
     Optional<SellerApplication> findByInviteToken(String inviteToken);
+
+    Page<SellerApplication> findByStatus(ApplicationStatus status, Pageable pageable);
 }
