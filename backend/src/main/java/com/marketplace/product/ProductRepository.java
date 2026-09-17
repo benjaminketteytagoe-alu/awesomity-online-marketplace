@@ -21,12 +21,17 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     Optional<Product> findByIdAndDeletedAtIsNull(UUID id);
 
+    long countByCategoryIdAndDeletedAtIsNull(UUID categoryId);
+
+    /** Count ALL products in a category, including soft-deleted. Used to guard category deletion. */
+    long countByCategoryId(UUID categoryId);
+
     @Query("""
         SELECT p FROM Product p
         WHERE p.deletedAt IS NULL
-          AND (:categoryId IS NULL OR p.category.id = :categoryId)
-          AND (:storeId IS NULL OR p.store.id = :storeId)
-          AND (:q IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')))
+          AND (CAST(:categoryId AS string) IS NULL OR p.category.id = :categoryId)
+          AND (CAST(:storeId AS string) IS NULL OR p.store.id = :storeId)
+          AND (CAST(:q AS string) IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))
         """)
     Page<Product> search(
         @Param("categoryId") UUID categoryId,
