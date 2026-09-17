@@ -39,4 +39,27 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         @Param("q") String q,
         Pageable pageable
     );
+
+    /**
+     * Atomically decrement stock if enough is available.
+     * Returns the number of rows updated: 1 on success, 0 if insufficient stock.
+     * This is our optimistic-concurrency primitive for order processing.
+     */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("""
+        UPDATE Product p
+        SET p.stock = p.stock - :qty
+        WHERE p.id = :productId
+          AND p.deletedAt IS NULL
+          AND p.stock >= :qty
+        """)
+    int decrementStockIfAvailable(
+            @org.springframework.data.repository.query.Param("productId") UUID productId,
+            @org.springframework.data.repository.query.Param("qty") int qty);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE Product p SET p.stock = p.stock + :qty WHERE p.id = :productId")
+    int incrementStock(
+            @org.springframework.data.repository.query.Param("productId") UUID productId,
+            @org.springframework.data.repository.query.Param("qty") int qty);
 }

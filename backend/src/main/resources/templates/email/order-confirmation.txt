@@ -1,0 +1,10 @@
+Thanks, [[${name}]]!
+
+Your order #[[${shortId}]] is confirmed.
+
+Items: [[${itemCount}]]
+Total: [[${totalAmount}]]
+
+We'll email you again when your order ships.
+
+— The Marketplace team

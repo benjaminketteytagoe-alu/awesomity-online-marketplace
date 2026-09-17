@@ -10,4 +10,7 @@ import java.util.UUID;
 public interface OrderItemRepository extends JpaRepository<OrderItem, UUID> {
 
     List<OrderItem> findByOrderId(UUID orderId);
+
+    /** Only items belonging to a specific seller (used by seller's order view). */
+    List<OrderItem> findByOrderIdAndProductStoreOwnerId(UUID orderId, UUID sellerId);
 }

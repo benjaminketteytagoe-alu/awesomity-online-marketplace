@@ -1,0 +1,9 @@
+Hi [[${name}]],
+
+Unfortunately your order #[[${shortId}]] could not be completed.
+
+Reason: [[${reason}]]
+
+No payment was taken. You're welcome to try again.
+
+— The Marketplace team
