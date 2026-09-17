@@ -25,14 +25,20 @@ spring:
     username: ${RABBIT_USER:marketplace}
     password: ${RABBIT_PASSWORD:marketplace}
     connection-timeout: 10s
+    dynamic: true
     listener:
       simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
         retry:
           enabled: true
           initial-interval: 2s
-          max-attempts: 5
-        missing-queues-fatal: false   
-    dynamic: true                     
+          multiplier: 2.0
+          max-attempts: 3
+          max-interval: 30s
+        concurrency: 2
+        max-concurrency: 8
+        prefetch: 10
 
 server:
   port: 8080
@@ -45,12 +51,11 @@ management:
   endpoint:
     health:
       show-details: always
-  health:
-    rabbit:
-      enabled: true      # report rabbit status in /actuator/health
 
 logging:
   level:
     org.flywaydb: INFO
     org.hibernate.SQL: INFO
     org.springframework.amqp: INFO
+    org.springframework.boot.autoconfigure.amqp: DEBUG
+    org.springframework.amqp.rabbit.core.RabbitAdmin: DEBUG
