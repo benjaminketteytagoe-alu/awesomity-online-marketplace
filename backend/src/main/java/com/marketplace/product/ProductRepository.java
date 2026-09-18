@@ -62,4 +62,20 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     int incrementStock(
             @org.springframework.data.repository.query.Param("productId") UUID productId,
             @org.springframework.data.repository.query.Param("qty") int qty);
+
+    /**
+     * Soft-delete every live product in the given store.
+     * Returns the number of rows affected.
+     */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("""
+        UPDATE Product p
+        SET p.deletedAt = CURRENT_TIMESTAMP
+        WHERE p.store.id = :storeId
+          AND p.deletedAt IS NULL
+        """)
+    int softDeleteAllByStoreId(
+            @org.springframework.data.repository.query.Param("storeId") UUID storeId);
+
+    long countByStoreIdAndDeletedAtIsNull(UUID storeId);
 }

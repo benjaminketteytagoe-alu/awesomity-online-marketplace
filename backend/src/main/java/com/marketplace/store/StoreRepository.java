@@ -1,5 +1,7 @@
 package com.marketplace.store;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +14,8 @@ public interface StoreRepository extends JpaRepository<Store, UUID> {
     Optional<Store> findByOwnerId(UUID ownerId);
 
     boolean existsByOwnerId(UUID ownerId);
+
+    Page<Store> findByDeletedAtIsNull(Pageable pageable);
+
+    Optional<Store> findByIdAndDeletedAtIsNull(UUID id);
 }
