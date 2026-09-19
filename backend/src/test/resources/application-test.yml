@@ -1,0 +1,60 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+    clean-disabled: false
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/placeholder
+    username: placeholder
+    password: placeholder
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    dynamic: true
+    listener:
+      simple:
+        auto-startup: true
+
+  mail:
+    host: localhost
+    port: 3025
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+  thymeleaf:
+    check-template-location: false
+
+app:
+  mail:
+    from: no-reply@test.local
+    from-name: Marketplace Test
+    frontend-base-url: http://localhost:3000
+    token-ttl-minutes: 60
+  jwt:
+    secret: test-secret-must-be-at-least-64-chars-long-for-hs512-signing-do-not-use-anywhere-else
+    access-ttl-minutes: 15
+    refresh-ttl-days: 7
+    issuer: marketplace
+  admin:
+    email: admin@test.local
+    password: Admin-Test-Password-1234
+
+logging:
+  level:
+    org.flywaydb: INFO
+    org.hibernate.SQL: WARN
+    org.springframework.amqp: WARN
+    com.marketplace: INFO
+    org.testcontainers: INFO

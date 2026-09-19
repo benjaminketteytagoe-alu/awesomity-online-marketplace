@@ -34,7 +34,7 @@ public class JwtService {
     private SecretKey signingKey;
 
     @PostConstruct
-    void init() {
+    public void init() {
         if (props.getSecret() == null || props.getSecret().length() < 64) {
             throw new IllegalStateException(
                 "app.jwt.secret must be set and at least 64 characters long " +
