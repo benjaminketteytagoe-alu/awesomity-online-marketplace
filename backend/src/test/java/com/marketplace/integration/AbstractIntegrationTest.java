@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -32,6 +34,7 @@ public abstract class AbstractIntegrationTest {
     protected static final RabbitMQContainer RABBIT =
             new RabbitMQContainer(DockerImageName.parse("rabbitmq:3.13-management-alpine"))
                     .withUser("marketplace", "marketplace")
+                    .withPermission("/", "marketplace", ".*", ".*", ".*")
                     .withReuse(true);
 
     @DynamicPropertySource
@@ -46,16 +49,32 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.rabbitmq.password", () -> "marketplace");
     }
 
-    @Autowired protected TestRestTemplate http;
+    /**
+     * We build our own TestRestTemplate (not the framework's auto-configured
+     * one) so that its underlying HTTP client is Apache HttpClient instead of
+     * JDK HttpURLConnection. The JDK client throws HttpRetryException on 401
+     * responses that carry a WWW-Authenticate header when the request sent
+     * a streaming (JSON) body.
+     */
+    protected TestRestTemplate http;
+
     @Autowired protected JdbcTemplate jdbc;
     @LocalServerPort protected int port;
+
+    @BeforeEach
+    void setUpBase() {
+        this.http = new TestRestTemplate(
+                new RestTemplateBuilder()
+                        .requestFactory(HttpComponentsClientHttpRequestFactory.class));
+
+        cleanDatabase();
+    }
 
     protected String baseUrl() {
         return "http://localhost:" + port;
     }
 
-    @BeforeEach
-    void cleanDatabase() {
+    private void cleanDatabase() {
         jdbc.execute("""
                 TRUNCATE TABLE
                     reviews,

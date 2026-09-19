@@ -12,12 +12,16 @@
     <relativePath/>
   </parent>
 
+  <!-- ============================================================
+       dependencyManagement: version overrides only. Does NOT add
+       anything to the classpath. Testcontainers BOM lives here.
+       ============================================================ -->
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>org.testcontainers</groupId>
         <artifactId>testcontainers-bom</artifactId>
-        <version>1.19.8</version>
+        <version>1.20.4</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -35,6 +39,10 @@
     <jjwt.version>0.12.6</jjwt.version>
   </properties>
 
+  <!-- ============================================================
+       dependencies: the actual classpath. Everything here is
+       downloaded and available to the build.
+       ============================================================ -->
   <dependencies>
     <!-- Web -->
     <dependency>
@@ -124,7 +132,9 @@
       <optional>true</optional>
     </dependency>
 
-    <!-- Testing -->
+    <!-- ============================================================
+         Testing
+         ============================================================ -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
@@ -135,6 +145,8 @@
       <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!-- Testcontainers (versions come from the BOM above) -->
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -148,6 +160,24 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>rabbitmq</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- ============================================================
+         HTTP client for integration tests.
+         The JDK HttpURLConnection throws HttpRetryException on 401
+         responses with WWW-Authenticate headers when sending a
+         streaming (JSON) body. Apache HttpClient handles this
+         correctly. Both client and core are required at runtime.
+         ============================================================ -->
+    <dependency>
+      <groupId>org.apache.httpcomponents.client5</groupId>
+      <artifactId>httpclient5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents.core5</groupId>
+      <artifactId>httpcore5</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
