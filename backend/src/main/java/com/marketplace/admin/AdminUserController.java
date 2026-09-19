@@ -5,6 +5,8 @@ import com.marketplace.admin.dto.AdminUserSummary;
 import com.marketplace.admin.dto.UpdateUserRoleRequest;
 import com.marketplace.admin.dto.UpdateUserStatusRequest;
 import com.marketplace.security.AuthPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,12 +20,14 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin/users")
+@Tag(name = "Admin - Users", description = "User management (GOD MODE)")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
 
     private final AdminUserService service;
 
+    @Operation(summary = "List users (filter by role/status)")
     @GetMapping
     public Page<AdminUserSummary> list(
             @RequestParam(required = false) String role,
@@ -32,11 +36,13 @@ public class AdminUserController {
         return service.list(role, status, pageable);
     }
 
+    @Operation(summary = "Get user detail")
     @GetMapping("/{id}")
     public AdminUserDetail get(@PathVariable UUID id) {
         return service.get(id);
     }
 
+    @Operation(summary = "Suspend or reactivate user")
     @PatchMapping("/{id}/status")
     public AdminUserDetail updateStatus(
             @AuthenticationPrincipal AuthPrincipal admin,
@@ -45,6 +51,7 @@ public class AdminUserController {
         return service.updateStatus(admin.getId(), id, req);
     }
 
+    @Operation(summary = "Change user role")
     @PatchMapping("/{id}/role")
     public AdminUserDetail updateRole(
             @AuthenticationPrincipal AuthPrincipal admin,

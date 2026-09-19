@@ -5,6 +5,8 @@ import com.marketplace.review.dto.ReviewResponse;
 import com.marketplace.review.dto.ReviewSummaryResponse;
 import com.marketplace.review.dto.UpdateReviewRequest;
 import com.marketplace.security.AuthPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +28,7 @@ public class ReviewController {
 
     // -------- Public --------
 
+    @Operation(summary = "List reviews for a product")
     @GetMapping("/api/products/{productId}/reviews")
     public Page<ReviewResponse> list(
             @PathVariable UUID productId,
@@ -33,6 +36,7 @@ public class ReviewController {
         return service.listForProduct(productId, pageable);
     }
 
+    @Operation(summary = "Average rating + count")
     @GetMapping("/api/products/{productId}/reviews/summary")
     public ReviewSummaryResponse summary(@PathVariable UUID productId) {
         return service.summaryForProduct(productId);
@@ -40,6 +44,7 @@ public class ReviewController {
 
     // -------- Shopper --------
 
+    @Operation(summary = "Create review (purchase required)")
     @PostMapping("/api/products/{productId}/reviews")
     @PreAuthorize("hasRole('SHOPPER')")
     public ResponseEntity<ReviewResponse> create(
@@ -50,6 +55,7 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
 
+    @Operation(summary = "Update own review")
     @PatchMapping("/api/reviews/{id}")
     @PreAuthorize("hasRole('SHOPPER')")
     public ReviewResponse update(
@@ -59,6 +65,7 @@ public class ReviewController {
         return service.update(user.getId(), id, req);
     }
 
+    @Operation(summary = "Delete own review")
     @DeleteMapping("/api/reviews/{id}")
     @PreAuthorize("hasRole('SHOPPER')")
     public ResponseEntity<Void> delete(
@@ -70,6 +77,7 @@ public class ReviewController {
 
     // -------- Admin --------
 
+    @Operation(summary = "Admin delete any review")
     @DeleteMapping("/api/admin/reviews/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> adminDelete(@PathVariable UUID id) {

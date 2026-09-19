@@ -3,6 +3,8 @@ package com.marketplace.seller;
 import com.marketplace.seller.dto.RejectRequest;
 import com.marketplace.seller.dto.SellerApplicationSummary;
 import com.marketplace.security.AuthPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,12 +19,14 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin/seller-applications")
+@Tag(name = "Admin - Seller Applications", description = "Admin review of seller applications")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminSellerApplicationController {
 
     private final SellerApplicationService service;
 
+    @Operation(summary = "List applications (filter by status)")
     @GetMapping
     public Page<SellerApplicationSummary> list(
             @RequestParam(required = false) String status,
@@ -30,6 +34,7 @@ public class AdminSellerApplicationController {
         return service.list(status, pageable);
     }
 
+    @Operation(summary = "Approve application → sends invite email")
     @PostMapping("/{id}/approve")
     public ResponseEntity<SellerApplicationSummary> approve(
             @PathVariable UUID id,
@@ -37,6 +42,7 @@ public class AdminSellerApplicationController {
         return ResponseEntity.ok(service.approve(id, admin.getId()));
     }
 
+    @Operation(summary = "Reject application with reason")
     @PostMapping("/{id}/reject")
     public ResponseEntity<SellerApplicationSummary> reject(
             @PathVariable UUID id,

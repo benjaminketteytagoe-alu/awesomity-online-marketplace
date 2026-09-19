@@ -2,6 +2,8 @@ package com.marketplace.order;
 
 import com.marketplace.order.dto.*;
 import com.marketplace.security.AuthPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,12 +19,14 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/orders")
+@Tag(name = "Orders (Shopper)", description = "Order placement, history, tracking")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('SHOPPER')")
 public class OrderController {
 
     private final OrderService service;
 
+    @Operation(summary = "Place a new order (returns PENDING)")
     @PostMapping
     public ResponseEntity<PlaceOrderResponse> place(
             @AuthenticationPrincipal AuthPrincipal shopper,
@@ -31,6 +35,7 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
 
+    @Operation(summary = "List own order history")
     @GetMapping
     public Page<OrderSummary> list(
             @AuthenticationPrincipal AuthPrincipal shopper,
@@ -38,6 +43,7 @@ public class OrderController {
         return service.listForShopper(shopper.getId(), pageable);
     }
 
+    @Operation(summary = "Get order detail")
     @GetMapping("/{id}")
     public OrderResponse get(
             @AuthenticationPrincipal AuthPrincipal shopper,
@@ -45,6 +51,7 @@ public class OrderController {
         return service.getForShopper(shopper.getId(), id);
     }
 
+    @Operation(summary = "Cancel an order")
     @PatchMapping("/{id}/cancel")
     public OrderResponse cancel(
             @AuthenticationPrincipal AuthPrincipal shopper,
