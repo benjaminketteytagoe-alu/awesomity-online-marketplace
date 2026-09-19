@@ -11,50 +11,37 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.RabbitMQContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Testcontainers
 public abstract class AbstractIntegrationTest {
 
-    @Container
-    protected static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
-                    .withDatabaseName("marketplace")
-                    .withUsername("marketplace")
-                    .withPassword("marketplace")
-                    .withReuse(true);
-
-    @Container
-    protected static final RabbitMQContainer RABBIT =
-            new RabbitMQContainer(DockerImageName.parse("rabbitmq:3.13-management-alpine"))
-                    .withUser("marketplace", "marketplace")
-                    .withPermission("/", "marketplace", ".*", ".*", ".*")
-                    .withReuse(true);
-
+    /**
+     * Containers are managed by TestContainersConfig — a JVM-wide singleton.
+     * We deliberately do NOT use @Testcontainers or @Container here, because
+     * those annotations tie container lifecycle to the test class, causing
+     * the containers to be stopped after the first class finishes while the
+     * shared Spring context still holds connections to them.
+     */
     @DynamicPropertySource
     static void registerProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
+        var pg = TestContainersConfig.POSTGRES;
+        var mq = TestContainersConfig.RABBIT;
 
-        registry.add("spring.rabbitmq.host", RABBIT::getHost);
-        registry.add("spring.rabbitmq.port", RABBIT::getAmqpPort);
+        registry.add("spring.datasource.url", pg::getJdbcUrl);
+        registry.add("spring.datasource.username", pg::getUsername);
+        registry.add("spring.datasource.password", pg::getPassword);
+
+        registry.add("spring.rabbitmq.host", mq::getHost);
+        registry.add("spring.rabbitmq.port", mq::getAmqpPort);
         registry.add("spring.rabbitmq.username", () -> "marketplace");
         registry.add("spring.rabbitmq.password", () -> "marketplace");
     }
 
     /**
-     * We build our own TestRestTemplate (not the framework's auto-configured
-     * one) so that its underlying HTTP client is Apache HttpClient instead of
-     * JDK HttpURLConnection. The JDK client throws HttpRetryException on 401
-     * responses that carry a WWW-Authenticate header when the request sent
-     * a streaming (JSON) body.
+     * Custom TestRestTemplate with Apache HttpClient (JDK's HttpURLConnection
+     * throws HttpRetryException on 401 responses with WWW-Authenticate header
+     * when the request sent a streaming body).
      */
     protected TestRestTemplate http;
 
