@@ -1,75 +1,105 @@
-# Marketplace API
+# Marketplace
 
-A comprehensive RESTful API for an online marketplace where **shoppers** buy products, **sellers** manage stores, and **admins** govern the platform.
+A full-stack online marketplace where **shoppers** buy products, **sellers** run
+stores, and **admins** govern the platform. Built with Spring Boot 3.3,
+PostgreSQL 16, RabbitMQ 3.13, and React 18. The entire stack runs in Docker —
+no local Java, Maven, Node, or Postgres installation required.
 
-Built with **Spring Boot 3.3**, **PostgreSQL 16**, **RabbitMQ 3.13**, and **JWT auth**. The entire stack runs in Docker — no local Java, Maven, Node, or Postgres installation required.
+> **Status:** Deployed — see [Deployment](#deployment) for the live URL and
+> admin credentials.
+>
+> **Requirements** satisfied in this implementation are listed in the original
+> challenge brief (`backend.md`, provided separately with the submission).
 
 [![Backend](https://img.shields.io/badge/backend-Spring%20Boot%203.3-6DB33F?logo=spring)](#)
 [![Java](https://img.shields.io/badge/java-21-ED8B00?logo=openjdk)](#)
 [![Postgres](https://img.shields.io/badge/postgres-16-336791?logo=postgresql)](#)
 [![RabbitMQ](https://img.shields.io/badge/rabbitmq-3.13-FF6600?logo=rabbitmq)](#)
+[![React](https://img.shields.io/badge/react-18-61DAFB?logo=react)](#)
+[![TypeScript](https://img.shields.io/badge/typescript-5-3178C6?logo=typescript)](#)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#license)
 
 ---
 
 ## Table of Contents
 
-- [Repository](#-repository)
-- [Quick Start](#-quick-start)
-- [Service URLs (Local)](#-service-urls-local)
-- [API Documentation](#-api-documentation)
-- [Admin Credentials](#-admin-credentials)
-- [System Design](#-system-design)
-- [Request Flow — Place & Pay for an Order](#-request-flow--place--pay-for-an-order)
-- [Entity Relationships](#-entity-relationships)
-- [Testing the API](#-testing-the-api)
-- [Running Tests](#-running-tests)
-- [Features Implemented](#-features-implemented)
-- [Tech Stack](#-tech-stack)
-- [Design Decisions](#-design-decisions)
-- [Environment Variables](#-environment-variables)
-- [Troubleshooting](#-troubleshooting)
-- [Roadmap](#-roadmap)
-- [License](#-license)
+- [Quick Start](#quick-start)
+- [Default Accounts](#default-accounts)
+- [Service URLs](#service-urls)
+- [Architecture](#architecture)
+- [Entity Relationships](#entity-relationships)
+- [Order Flow — Create, Pay, Process](#order-flow--create-pay-process)
+- [Features Implemented](#features-implemented)
+- [API Documentation](#api-documentation)
+- [Tech Stack](#tech-stack)
+- [Testing](#testing)
+- [Environment Variables](#environment-variables)
+- [Deployment](#deployment)
+- [Known Limitations](#known-limitations)
+- [Security Notes](#security-notes)
+- [Project Structure](#project-structure)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ---
 
-## Repository
+## Quick Start
 
-**GitHub:** [https://github.com/benjaminketteytagoe-alu/awesomity-online-marketplace.git](https://github.com/benjaminketteytagoe-alu/awesomity-online-marketplace.git)
+### Prerequisites
+
+The only thing you need installed is **Docker** (with the Compose plugin).
+No Java, Node.js, PostgreSQL, RabbitMQ, or any other runtime required. The
+entire stack — backend, frontend, database, message broker, and email
+server — runs inside Docker containers.
+
+- **Docker Desktop** (macOS / Windows) — https://www.docker.com/products/docker-desktop
+- **Docker Engine + Compose plugin** (Linux) — https://docs.docker.com/engine/install/
+
+Verify with:
 
 ```bash
+docker --version           # 24.x or newer
+docker compose version
+
+# 1. Clone the repository
 git clone https://github.com/benjaminketteytagoe-alu/awesomity-online-marketplace.git
 cd awesomity-online-marketplace
 
-## Security Notes
+# 2. Copy the example environment file
+cp .env.example .env
 
-### CVE-2026-53669 — React Router open redirect (moderate)
+# 3. Start the entire stack
+docker compose up -d --build
 
-Affects `react-router-dom` versions 6.0.0 through 7.17.0. A crafted path
-containing backslashes can cause `<Link>` or `useNavigate` to navigate to an
-external origin, enabling phishing and token-exfiltration attacks.
+# Stop containers, keep data
+docker compose down
 
-**Status: mitigated at the application layer.**
+# Stop containers, delete all data (fresh start — reseeds on next up)
+docker compose down -v
 
-All dynamic navigation targets are validated with `safeInternalPath()`
-(`frontend/src/lib/navigation.ts`). This function rejects anything that is
-not a clean internal path — including paths containing backslashes, paths
-starting with `//`, and paths with a scheme prefix. It is applied at every
-place untrusted input flows into a navigation primitive:
+# Rebuild both
+docker compose up -d --build
 
-- `RequireRole.tsx` — the `redirectTo` prop
-- `auth.mutations.ts` — the `useLogin` return-to-origin path
+# Rebuild only one
+docker compose up -d --build backend
+docker compose up -d --build frontend
 
-**Library upgrade to `react-router-dom@7.18.0+` is planned as a dedicated
-migration step.** It is deferred because React Router 7 is a breaking major
-release requiring route-tree changes, testing, and updated imports.
 
-### GHSA-337j-9hxr-rhxg — SSR constructor injection (moderate)
+# Inside the running backend container
+docker compose exec backend ./mvnw test
 
-**Status: not applicable.**
+# Or locally (requires Java 21 + Maven on the host)
+cd backend
+./mvnw test
 
-This advisory only affects React Router **Framework Mode** and **Data Mode**
-applications performing server-side rendering and hydration. This project
-uses **Declarative Mode** routing (`<BrowserRouter>` + `<Routes>` +
-`<Route element>`). No SSR, no hydration, no exposure.
+
+cd frontend
+
+# Type check — must pass with zero errors
+npm run typecheck
+
+# Lint — must pass with zero warnings
+npm run lint
+
+# Build — verifies the production bundle compiles
+npm run build
