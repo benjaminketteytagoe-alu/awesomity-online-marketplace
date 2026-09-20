@@ -2,8 +2,8 @@ import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { toErrorMessage } from '@/lib/api/client';
-import { orderApi } from '@/features/orders/order.api';
 import { usePlaceOrder, usePayOrder } from '@/features/orders/order.queries';
+import { pollUntilPaid } from '@/features/orders/pollOrderStatus';
 import type { PayOrderRequest } from '@/features/orders/order.types';
 import { useCartStore } from '@/features/cart/cart.store';
 import type { CartItem } from '@/features/cart/cart.types';
@@ -18,6 +18,9 @@ import type { CartItem } from '@/features/cart/cart.types';
  *
  * On any failure we return to idle with an error message; the cart is
  * untouched so the user can retry without re-adding items.
+ *
+ * The polling helper (pollUntilPaid) lives in features/orders so it
+ * can be shared with PayOrderModal — same behavior in both places.
  */
 export type CheckoutFlowState = 'idle' | 'placing' | 'paying' | 'confirming';
 
@@ -87,7 +90,7 @@ export function useCheckoutFlow(): UseCheckoutFlowResult {
         // ---------- Step 4: clear cart and redirect ----------
         clearCart();
 
-        if (confirmed) {
+        if (confirmed && confirmed.status === 'PAID') {
           toast.success('Order confirmed');
         } else {
           // The order exists and was paid, but the async consumer
@@ -126,40 +129,4 @@ export function useCheckoutFlow(): UseCheckoutFlowResult {
     isSubmitting: state !== 'idle',
     submitLabel,
   };
-}
-
-/**
- * Poll GET /orders/{id} until status is PAID (or CANCELLED — a terminal
- * state we can stop on). Returns true if the order reached a terminal
- * state within the timeout, false otherwise.
- *
- * Why a hand-rolled loop instead of TanStack Query's refetchInterval:
- *   - The polling is triggered by a specific user action, not by
- *     mounting a component.
- *   - We want to stop the moment a condition is met, not on a timer.
- *   - The result is used inline (to decide the toast message and
- *     whether to keep waiting), not stored in the cache.
- *   A single async function is clearer than configuring a query hook
- *   to do the same thing and then tearing it down.
- */
-async function pollUntilPaid(
-  orderId: string,
-  timeoutMs: number,
-): Promise<boolean> {
-  const start = Date.now();
-  const intervalMs = 500;
-
-  while (Date.now() - start < timeoutMs) {
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    try {
-      const order = await orderApi.byId(orderId);
-      if (order.status === 'PAID') return true;
-      if (order.status === 'CANCELLED') return true; // terminal
-    } catch {
-      // Transient — keep polling until the deadline. If the backend
-      // is down for the whole 8s, we'll fall through to `false` and
-      // the user gets the "still processing" message. That's honest.
-    }
-  }
-  return false;
 }
