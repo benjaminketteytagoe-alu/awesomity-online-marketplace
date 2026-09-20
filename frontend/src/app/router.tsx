@@ -9,6 +9,7 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ProductsPage } from '@/pages/ProductsPage';
+import { CheckoutPage } from '@/pages/CheckoutPage';
 import { CategoriesPage } from '@/pages/CategoriesPage';
 import { ProductDetailPage } from '@/pages/ProductDetailPage';
 import { MyOrdersPage } from '@/pages/MyOrdersPage';
@@ -53,6 +54,7 @@ export function AppRoutes() {
         <Route element={<RequireAuth />}>
           <Route path="/orders" element={<MyOrdersPage />} />
           <Route path="/orders/:id" element={<MyOrdersPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
         </Route>
 
         {/* ---------- Seller-only ---------- */}
