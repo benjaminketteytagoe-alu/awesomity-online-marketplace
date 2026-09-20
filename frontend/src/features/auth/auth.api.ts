@@ -31,4 +31,36 @@ export const authApi = {
     const { data } = await api.get<MeResponse>(ENDPOINTS.auth.me);
     return data;
   },
+
+  /**
+   * POST /api/seller-applications/accept
+   *
+   * Public endpoint (no auth needed). The invite token is the
+   * credential. On success, the backend creates a SELLER user and a
+   * Store from the original application, then the applicant can log
+   * in normally.
+   *
+   * Why this lives in auth.api: it creates credentials. Same category
+   * of operation as register — the endpoint happens to be namespaced
+   * under seller-applications, but the frontend responsibility is
+   * "create an account from a token".
+   */
+  async acceptSellerInvite(payload: {
+    inviteToken: string;
+    password: string;
+  }): Promise<{
+    userId: string;
+    storeId: string;
+    email: string;
+    name: string;
+    role: string;
+    status: string;
+    message: string;
+  }> {
+    const { data } = await api.post(
+      '/api/seller-applications/accept',
+      payload,
+    );
+    return data;
+  },
 };
