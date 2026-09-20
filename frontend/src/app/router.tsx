@@ -13,6 +13,7 @@ import { ProductsPage } from '@/pages/ProductsPage';
 import { OrdersPage } from '@/pages/OrdersPage';
 import { OrderDetailPage } from '@/pages/OrderDetailPage';
 import { CheckoutPage } from '@/pages/CheckoutPage';
+import { ProfilePage } from '@/pages/ProfilePage';
 import { CategoriesPage } from '@/pages/CategoriesPage';
 import { ProductDetailPage } from '@/pages/ProductDetailPage';
 import { SellerDashboardPage } from '@/pages/SellerDashboardPage';
@@ -71,6 +72,7 @@ export function AppRoutes() {
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/orders/:id" element={<OrderDetailPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
         {/* ---------- Seller-only ---------- */}

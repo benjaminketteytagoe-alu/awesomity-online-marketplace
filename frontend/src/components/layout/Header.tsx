@@ -62,6 +62,12 @@ export function Header() {
                 <Package className="h-4 w-4" />
                 Orders
               </Link>
+              <Link
+                to="/profile"
+                className="hidden text-sm text-muted-foreground hover:text-foreground md:inline-flex md:items-center md:gap-2"
+              >
+                Profile
+              </Link>
               <div className="flex items-center gap-2 border-l border-border pl-3">
                 <UserIcon className="h-4 w-4 text-muted-foreground" />
                 <span className="hidden text-sm font-medium md:inline">{user.name}</span>
