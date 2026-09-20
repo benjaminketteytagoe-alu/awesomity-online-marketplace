@@ -21,6 +21,14 @@ import { SellerOrdersPage } from '@/pages/SellerOrdersPage';
 import { SellerOrderDetailPage } from '@/pages/SellerOrderDetailPage';
 import { SellerStorePage } from '@/pages/SellerStorePage';
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
+import { AdminLayout } from '@/features/admin/AdminLayout';
+import { AdminUsersPage } from '@/pages/AdminUsersPage';
+import { AdminStoresPage } from '@/pages/AdminStoresPage';
+import { AdminProductsPage } from '@/pages/AdminProductsPage';
+import { AdminOrdersPage } from '@/pages/AdminOrdersPage';
+import { AdminCategoriesPage } from '@/pages/AdminCategoriesPage';
+import { AdminApplicationsPage } from '@/pages/AdminApplicationsPage';
+
 
 /**
  * Route table + session bootstrap gate.
@@ -79,8 +87,15 @@ export function AppRoutes() {
         {/* ---------- Admin-only ---------- */}
         <Route element={<RequireAuth />}>
           <Route element={<RequireRole allow={['ADMIN']} />}>
-            <Route path="/admin" element={<AdminDashboardPage />} />
-            <Route path="/admin/*" element={<AdminDashboardPage />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboardPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="stores" element={<AdminStoresPage />} />
+              <Route path="products" element={<AdminProductsPage />} />
+              <Route path="orders" element={<AdminOrdersPage />} />
+              <Route path="categories" element={<AdminCategoriesPage />} />
+              <Route path="applications" element={<AdminApplicationsPage />} />
+            </Route>
           </Route>
         </Route>
 
