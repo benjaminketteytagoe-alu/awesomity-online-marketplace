@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { useProduct } from '@/features/products/product.queries';
 import { AddToCartButton } from '@/features/cart/AddToCartButton';
+import { ProductReviewsSection } from '@/features/reviews/ProductReviewsSection';
 import { ProductDetailSkeleton } from '@/features/products/ProductDetailSkeleton';
 import {
   formatPrice,
@@ -158,6 +159,9 @@ export function ProductDetailPage() {
           </dl>
         </div>
       </div>
+
+      {/* Reviews section — full width below the two-column layout */}
+      <ProductReviewsSection productId={product.id} />
     </div>
   );
 }
