@@ -9,10 +9,10 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ProductsPage } from '@/pages/ProductsPage';
+import { OrdersPage } from '@/pages/OrdersPage';
 import { CheckoutPage } from '@/pages/CheckoutPage';
 import { CategoriesPage } from '@/pages/CategoriesPage';
 import { ProductDetailPage } from '@/pages/ProductDetailPage';
-import { MyOrdersPage } from '@/pages/MyOrdersPage';
 import { SellerDashboardPage } from '@/pages/SellerDashboardPage';
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
 
@@ -52,8 +52,9 @@ export function AppRoutes() {
 
         {/* ---------- Authenticated (any role) ---------- */}
         <Route element={<RequireAuth />}>
-          <Route path="/orders" element={<MyOrdersPage />} />
-          <Route path="/orders/:id" element={<MyOrdersPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          {/* Temporary: /orders/:id redirects to /orders until Block E2 ships */}
+          <Route path="/orders/:id" element={<Navigate to="/orders" replace />} />
           <Route path="/checkout" element={<CheckoutPage />} />
         </Route>
 
