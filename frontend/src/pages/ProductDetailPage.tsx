@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useProduct } from '@/features/products/product.queries';
+import { AddToCartButton } from '@/features/cart/AddToCartButton';
 import { ProductDetailSkeleton } from '@/features/products/ProductDetailSkeleton';
 import {
   formatPrice,
@@ -121,6 +122,9 @@ export function ProductDetailPage() {
 
           {/* Stock badge */}
           <StockBadge stock={stock} count={product.stock} />
+
+          {/* Add to cart — quantity picker + button */}
+          <AddToCartButton product={product} className="mt-2" />
 
           {/* Description */}
           {product.description ? (

@@ -2,6 +2,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { LogOut, Package, Shield, Store, User as UserIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/features/auth/auth.store';
+import { CartButton } from '@/features/cart/CartButton';
 import { tokenStorage } from '@/lib/storage';
 
 /**
@@ -49,6 +50,9 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          {/* Cart button — always visible */}
+          <CartButton />
+
           {isAuthenticated && user ? (
             <>
               <Link
