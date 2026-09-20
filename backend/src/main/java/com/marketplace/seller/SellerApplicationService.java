@@ -224,7 +224,7 @@ public class SellerApplicationService {
 
     private void publishSellerInviteEmail(SellerApplication app, String inviteToken) {
         String inviteUrl = mailProperties.getFrontendBaseUrl()
-                + "/seller/accept-invite?token=" + inviteToken;
+                + "/seller-applications/accept?token=" + inviteToken;
 
         EmailJob job = new EmailJob(
                 app.getEmail(),
