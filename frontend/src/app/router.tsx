@@ -15,6 +15,10 @@ import { CheckoutPage } from '@/pages/CheckoutPage';
 import { CategoriesPage } from '@/pages/CategoriesPage';
 import { ProductDetailPage } from '@/pages/ProductDetailPage';
 import { SellerDashboardPage } from '@/pages/SellerDashboardPage';
+import { SellerLayout } from '@/features/seller/SellerLayout';
+import { SellerProductsPage } from '@/pages/SellerProductsPage';
+import { SellerOrdersPage } from '@/pages/SellerOrdersPage';
+import { SellerStorePage } from '@/pages/SellerStorePage';
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
 
 /**
@@ -61,8 +65,12 @@ export function AppRoutes() {
         {/* ---------- Seller-only ---------- */}
         <Route element={<RequireAuth />}>
           <Route element={<RequireRole allow={['SELLER']} />}>
-            <Route path="/seller" element={<SellerDashboardPage />} />
-            <Route path="/seller/*" element={<SellerDashboardPage />} />
+            <Route path="/seller" element={<SellerLayout />}>
+              <Route index element={<SellerDashboardPage />} />
+              <Route path="products" element={<SellerProductsPage />} />
+              <Route path="orders" element={<SellerOrdersPage />} />
+              <Route path="store" element={<SellerStorePage />} />
+            </Route>
           </Route>
         </Route>
 
