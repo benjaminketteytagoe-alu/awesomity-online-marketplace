@@ -9,6 +9,7 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ProductsPage } from '@/pages/ProductsPage';
+import { ProductDetailPage } from '@/pages/ProductDetailPage';
 import { MyOrdersPage } from '@/pages/MyOrdersPage';
 import { SellerDashboardPage } from '@/pages/SellerDashboardPage';
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
@@ -41,6 +42,7 @@ export function AppRoutes() {
         {/* ---------- Public ---------- */}
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<ProductsPage />} />
+        <Route path="/products/:id" element={<ProductDetailPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify" element={<VerifyEmailPage />} />
