@@ -18,6 +18,7 @@ import { SellerDashboardPage } from '@/pages/SellerDashboardPage';
 import { SellerLayout } from '@/features/seller/SellerLayout';
 import { SellerProductsPage } from '@/pages/SellerProductsPage';
 import { SellerOrdersPage } from '@/pages/SellerOrdersPage';
+import { SellerOrderDetailPage } from '@/pages/SellerOrderDetailPage';
 import { SellerStorePage } from '@/pages/SellerStorePage';
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
 
@@ -69,6 +70,7 @@ export function AppRoutes() {
               <Route index element={<SellerDashboardPage />} />
               <Route path="products" element={<SellerProductsPage />} />
               <Route path="orders" element={<SellerOrdersPage />} />
+              <Route path="orders/:id" element={<SellerOrderDetailPage />} />
               <Route path="store" element={<SellerStorePage />} />
             </Route>
           </Route>
