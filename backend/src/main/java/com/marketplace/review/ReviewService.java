@@ -7,6 +7,7 @@ import com.marketplace.order.OrderStatus;
 import com.marketplace.product.Product;
 import com.marketplace.product.ProductRepository;
 import com.marketplace.review.dto.CreateReviewRequest;
+import com.marketplace.review.dto.CanReviewResponse;
 import com.marketplace.review.dto.ReviewResponse;
 import com.marketplace.review.dto.ReviewSummaryResponse;
 import com.marketplace.review.dto.UpdateReviewRequest;
@@ -50,6 +51,37 @@ public class ReviewService {
         Double avg = reviewRepository.averageRatingForProduct(productId);
         long count = reviewRepository.countByProductId(productId);
         return new ReviewSummaryResponse(productId, avg == null ? 0.0 : avg, count);
+    }
+
+    /**
+     * Can the current user review this product?
+     *
+     * Anonymous callers always get canReview=false. A shopper gets
+     * canReview=true only if they have a qualifying order and haven't
+     * already reviewed. The existingReviewId is populated when the
+     * user has already reviewed, so the UI can offer "Edit" instead.
+     */
+    @Transactional(readOnly = true)
+    public CanReviewResponse canReview(UUID userId, UUID productId) {
+        if (userId == null || !productRepository.existsById(productId)) {
+            return new CanReviewResponse(productId, false, false, null);
+        }
+
+        var existing = reviewRepository.findByUserIdAndProductId(userId, productId);
+        if (existing.isPresent()) {
+            return new CanReviewResponse(productId, false, true, existing.get().getId());
+        }
+
+        var reviewableStatuses = EnumSet.of(
+                OrderStatus.PAID,
+                OrderStatus.PROCESSING,
+                OrderStatus.SHIPPED,
+                OrderStatus.DELIVERED);
+
+        boolean purchased = reviewRepository.hasUserPurchasedProduct(
+                userId, productId, reviewableStatuses);
+
+        return new CanReviewResponse(productId, purchased, false, null);
     }
 
     // ---------------- SHOPPER ----------------

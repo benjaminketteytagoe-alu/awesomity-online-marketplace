@@ -1,6 +1,7 @@
 package com.marketplace.review;
 
 import com.marketplace.review.dto.CreateReviewRequest;
+import com.marketplace.review.dto.CanReviewResponse;
 import com.marketplace.review.dto.ReviewResponse;
 import com.marketplace.review.dto.ReviewSummaryResponse;
 import com.marketplace.review.dto.UpdateReviewRequest;
@@ -40,6 +41,14 @@ public class ReviewController {
     @GetMapping("/api/products/{productId}/reviews/summary")
     public ReviewSummaryResponse summary(@PathVariable UUID productId) {
         return service.summaryForProduct(productId);
+    }
+
+    @Operation(summary = "Can the current user review this product?")
+    @GetMapping("/api/products/{productId}/can-review")
+    public CanReviewResponse canReview(
+            @AuthenticationPrincipal AuthPrincipal user,
+            @PathVariable UUID productId) {
+        return service.canReview(user == null ? null : user.getId(), productId);
     }
 
     // -------- Shopper --------
