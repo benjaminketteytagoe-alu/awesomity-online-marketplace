@@ -77,7 +77,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-    profiles: ["full"]
 
 volumes:
   postgres_data:
