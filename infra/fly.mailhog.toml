@@ -1,0 +1,16 @@
+# Mailhog on Fly.io
+#
+# SMTP server + web UI for catching outgoing emails. Internal-only:
+# the backend reaches it via marketplace-mailhog-bkt.internal:1025.
+# The UI (port 8025) is NOT exposed publicly — inspect via SSH tunnel
+# or skip inspection entirely for the demo.
+
+app = "marketplace-mailhog-bkt"
+primary_region = "cdg"
+
+[build]
+  image = "mailhog/mailhog:latest"
+
+[machine]
+  size = "shared-cpu-1x"
+  memory = 256

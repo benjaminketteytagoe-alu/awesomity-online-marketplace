@@ -1,0 +1,28 @@
+# Self-hosted Postgres on Fly.io
+#
+# Uses the official postgres:16-alpine image. SSL is off — traffic on the
+# Fly internal network is already encrypted by WireGuard. No public
+# exposure; only other apps in the same org can reach this.
+
+app = "marketplace-postgres-bkt"
+primary_region = "cdg"
+
+[build]
+  image = "postgres:16-alpine"
+
+# Mount at /var/lib/postgresql (NOT .../data) so Postgres can create its
+# own data subdirectory. This avoids the "lost+found" error that occurs
+# when initdb tries to initialize a directory that is a mount point root.
+[[mounts]]
+  source = "postgres_data"
+  destination = "/var/lib/postgresql"
+
+[env]
+  POSTGRES_DB = "marketplace"
+  POSTGRES_USER = "marketplace"
+  # PGDATA tells Postgres where to put its data files inside the mount.
+  PGDATA = "/var/lib/postgresql/data"
+
+[machine]
+  size = "shared-cpu-1x"
+  memory = 512

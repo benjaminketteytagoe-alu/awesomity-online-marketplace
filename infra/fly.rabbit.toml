@@ -1,0 +1,26 @@
+# RabbitMQ on Fly.io
+#
+# Runs the official RabbitMQ image with the management plugin enabled.
+# A persistent volume at /var/lib/rabbitmq survives restarts.
+#
+# Internal-only: no public services exposed. The backend reaches this
+# app via marketplace-rabbit-bkt.internal:5672 on the Fly private network.
+
+app = "marketplace-rabbit-bkt"
+primary_region = "cdg"
+
+[build]
+  image = "rabbitmq:3.13-management-alpine"
+
+[[mounts]]
+  source = "rabbit_data"
+  destination = "/var/lib/rabbitmq"
+
+[env]
+  RABBITMQ_DEFAULT_USER = "marketplace"
+  RABBITMQ_DEFAULT_VHOST = "/"
+  # RABBITMQ_DEFAULT_PASS comes from `fly secrets set`
+
+[machine]
+  size = "shared-cpu-1x"
+  memory = 512

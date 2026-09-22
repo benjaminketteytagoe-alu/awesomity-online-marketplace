@@ -1,0 +1,43 @@
+# Backend (Spring Boot) on Fly.io
+
+app = "marketplace-api-bkt"
+primary_region = "cdg"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  SPRING_PROFILES_ACTIVE = "production"
+  DB_HOST = "marketplace-postgres-bkt.internal"
+  DB_PORT = "5432"
+  DB_NAME = "marketplace"
+  DB_USER = "marketplace"
+  RABBIT_HOST = "marketplace-rabbit-bkt.internal"
+  RABBIT_PORT = "5672"
+  RABBIT_USER = "marketplace"
+  MAIL_HOST = "marketplace-mailhog-bkt.internal"
+  MAIL_PORT = "1025"
+  MAIL_FROM = "no-reply@marketplace.app"
+  JWT_ACCESS_TTL_MINUTES = "15"
+  JWT_REFRESH_TTL_DAYS = "7"
+  ADMIN_EMAIL = "admin@marketplace.local"
+  APP_BASE_URL = "https://marketplace-api-bkt.fly.dev"
+  FRONTEND_BASE_URL = "https://marketplace-web-bkt.fly.dev"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "10s"
+  grace_period = "90s"
+  method = "GET"
+  path = "/actuator/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = 512
