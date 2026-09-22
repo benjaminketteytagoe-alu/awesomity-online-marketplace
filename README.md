@@ -103,3 +103,10 @@ npm run lint
 
 # Build — verifies the production bundle compiles
 npm run build
+
+## Deployment
+
+**Live URLs:**
+- **Frontend:** https://marketplace-web-bkt.fly.dev
+- **Backend API:** https://marketplace-api-bkt.fly.dev
+- **Swagger UI:** https://marketplace-api-bkt.fly.dev/swagger-ui.html
