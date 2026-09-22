@@ -110,3 +110,14 @@ npm run build
 - **Frontend:** https://marketplace-web-bkt.fly.dev
 - **Backend API:** https://marketplace-api-bkt.fly.dev
 - **Swagger UI:** https://marketplace-api-bkt.fly.dev/swagger-ui.html
+
+
+> **Demo environment.**
+> The credentials below are intentionally public so reviewers can test
+> admin, seller, and shopper flows without requesting access. This is
+> **not a production environment** — no real user data is stored, the
+> admin password is shared openly, and destructive admin actions affect
+> only the demo dataset.
+>
+> To reset: `fly apps destroy marketplace-postgres-bkt && cd infra &&
+> fly deploy --config fly.postgres.toml`, then redeploy the backend.

@@ -1,22 +1,35 @@
+# Marketplace — local development overlay.
+#
+# Docker Compose merges this file automatically when running
+# `docker compose up`. It adds host ports so you can inspect the
+# infrastructure from your machine:
+#
+#   postgres   -> localhost:5433  (psql, DBeaver)
+#   rabbitmq   -> localhost:15672 (management UI)
+#   mailhog    -> localhost:8025  (email capture UI)
+#
+# It also enables Spring Boot devtools for the backend.
+#
+# The base file's two application ports (3000, 8080) stay as-is.
+
 services:
+  # Expose infrastructure to the host for debugging.
   postgres:
     ports:
       - "5433:5432"
 
   rabbitmq:
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # management UI
 
   mailhog:
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "1025:1025"    # SMTP
+      - "8025:8025"    # web UI
 
+  # Enable devtools for faster backend restart during development.
   backend:
     environment:
       SPRING_PROFILES_ACTIVE: dev
-
-  frontend:
-    ports:
-      - "3000:80"
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
