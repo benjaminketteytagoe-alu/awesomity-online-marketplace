@@ -1,8 +1,24 @@
+# Marketplace — production-shaped Docker Compose stack.
+#
+# Five services in dependency order:
+#   postgres   persistent database          (no host port)
+#   rabbitmq   asynchronous job queue       (no host port)
+#   mailhog    development SMTP capture     (no host port)
+#   backend    Spring Boot API              (port 8080)
+#   frontend   nginx serving React SPA      (port 3000)
+#
+# Local development overlays extra ports via docker-compose.override.yml.
+# Secrets and infrastructure credentials come from .env (see .env.example).
+
 name: marketplace
 
 services:
+  # ------------------------------------------------------------
+  # Postgres — persistent datastore for all application state.
+  # ------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
+    container_name: marketplace-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -15,9 +31,14 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
+    networks: [marketplace]
 
+  # ------------------------------------------------------------
+  # RabbitMQ — task queue for emails and order processing.
+  # ------------------------------------------------------------
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
+    container_name: marketplace-rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
@@ -29,36 +50,54 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks: [marketplace]
 
+  # ------------------------------------------------------------
+  # Mailhog — captures outgoing email in development.
+  # No authentication; never expose publicly.
+  # ------------------------------------------------------------
   mailhog:
     image: mailhog/mailhog:latest
+    container_name: marketplace-mailhog
     logging:
       driver: none
     restart: unless-stopped
+    networks: [marketplace]
 
+  # ------------------------------------------------------------
+  # Backend — Spring Boot API on port 8080.
+  # Waits for Postgres and RabbitMQ to be healthy before starting.
+  # ------------------------------------------------------------
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: marketplace-backend
     environment:
       SPRING_PROFILES_ACTIVE: docker
+
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
+
       RABBIT_HOST: rabbitmq
       RABBIT_PORT: 5672
       RABBIT_USER: ${RABBITMQ_USER}
       RABBIT_PASSWORD: ${RABBITMQ_PASSWORD}
+
       MAIL_HOST: mailhog
-      MAIL_PORT: ${MAIL_PORT}
+      MAIL_PORT: 1025
       MAIL_FROM: ${MAIL_FROM}
+
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_TTL_MINUTES: ${JWT_ACCESS_TTL_MINUTES}
       JWT_REFRESH_TTL_DAYS: ${JWT_REFRESH_TTL_DAYS}
+
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
       APP_BASE_URL: ${APP_BASE_URL}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL}
     ports:
@@ -68,16 +107,48 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
     restart: unless-stopped
+    networks: [marketplace]
 
+  # ------------------------------------------------------------
+  # Frontend — nginx serving the compiled React app on port 80.
+  # Proxies /api/* to the backend over the internal network.
+  # ------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    container_name: marketplace-frontend
+    environment:
+      # Substituted into the nginx template at container start by envsubst.
+      # Local compose uses the internal Docker service name.
+      # Fly deployment overrides this value in frontend/fly.toml.
+      BACKEND_URL: http://backend:8080
+    ports:
+      - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
+    networks: [marketplace]
 
+# ------------------------------------------------------------
+# Named volumes — persist across `docker compose down`.
+# Use `docker compose down -v` to wipe and start fresh.
+# ------------------------------------------------------------
 volumes:
   postgres_data:
   rabbitmq_data:
+
+# ------------------------------------------------------------
+# Single internal network. Services reach each other by name.
+# ------------------------------------------------------------
+networks:
+  marketplace:
+    driver: bridge

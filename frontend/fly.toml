@@ -12,6 +12,9 @@ primary_region = "cdg"
 [build]
   dockerfile = "Dockerfile"
 
+[env]
+  BACKEND_URL = "http://marketplace-api-bkt.internal:8080"
+
 [http_service]
   internal_port = 80
   force_https = true

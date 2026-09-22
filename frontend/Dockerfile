@@ -1,10 +1,10 @@
 # ============================================================
-# Stage 1: Build — Node + full toolchain, thrown away after
+# Stage 1: Build — Node builds the React app
 # ============================================================
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Install deps first (Docker layer cache: reused unless lockfile changes)
+# Install dependencies (Docker layer cache: reused unless lockfile changes)
 COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
     if [ -f package-lock.json ]; then npm ci; else npm install; fi
@@ -14,17 +14,27 @@ COPY . .
 RUN npm run build
 
 # ============================================================
-# Stage 2: Runtime — nginx only, ~35 MB final image
+# Stage 2: Runtime — nginx serves the built assets
 # ============================================================
 FROM nginx:1.27-alpine AS runtime
 
-# Swap default config for ours (proxy + SPA fallback)
-RUN rm /etc/nginx/conf.d/default.conf
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# The nginx image's entrypoint will substitute ${BACKEND_URL} in files
+# located at /etc/nginx/templates/*.template via envsubst, then write
+# the result to /etc/nginx/conf.d/.
+#
+# We name the source file with `.template` extension so the entrypoint
+# picks it up.
+RUN rm -f /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
-# Copy built assets from build stage
+# Default backend URL for local Docker Compose.
+# Fly deployment overrides this in fly.toml [env].
+ENV BACKEND_URL=http://backend:8080
+
+# Copy built assets
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 
-# nginx official image already has the right CMD
+# The nginx image's CMD starts nginx; the entrypoint runs the template
+# substitution first.
